@@ -157,8 +157,11 @@ const StyledSelect = ({ label, options, value, onChange, icon }) => {
 // ── Gift Card ─────────────────────────────────────────────────────────────────
 const GiftCardFace = ({ gift, index }) => {
   const [expanded, setExpanded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
   const icons = ["🎁", "✨", "💡", "🎯", "🌟", "🎀"];
+
+  const hasImage = gift.imageUrl && !imgError;
 
   const handleExpandClick = () => setExpanded((prev) => !prev);
   const handleExpandKeyDown = (e) => {
@@ -192,6 +195,52 @@ const GiftCardFace = ({ gift, index }) => {
         e.currentTarget.style.boxShadow = "none";
       }}
     >
+      {/* Banner: real product image if available, decorative fallback otherwise */}
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: hasImage ? "180px" : "90px",
+          overflow: "hidden",
+          background: `linear-gradient(135deg, ${accent}28 0%, ${accent}08 60%, rgba(0,0,0,0.15) 100%)`,
+          transition: "height 0.3s ease",
+        }}
+      >
+        {hasImage ? (
+          <>
+            <img
+              src={gift.imageUrl}
+              alt={gift.name}
+              onError={() => setImgError(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center",
+              }}
+            />
+            {/* Gradient overlay so badges stay readable */}
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, transparent 40%, rgba(13,13,26,0.6) 100%)" }} />
+          </>
+        ) : (
+          <>
+            {/* Decorative blurred circles */}
+            <div style={{ position: "absolute", top: "-20px", right: "-20px", width: "110px", height: "110px", borderRadius: "50%", background: `${accent}20`, filter: "blur(24px)" }} />
+            <div style={{ position: "absolute", bottom: "-30px", left: "10%", width: "80px", height: "80px", borderRadius: "50%", background: `${accent}14`, filter: "blur(20px)" }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${accent}12 1px, transparent 1px), linear-gradient(90deg, ${accent}12 1px, transparent 1px)`, backgroundSize: "24px 24px" }} />
+            <span style={{ position: "absolute", right: "16px", bottom: "-6px", fontSize: "62px", opacity: 0.12, lineHeight: 1, userSelect: "none" }}>{icons[index % icons.length]}</span>
+          </>
+        )}
+        {/* Category label */}
+        <span style={{ position: "absolute", top: "12px", left: "14px", fontFamily: "'Inter',sans-serif", fontSize: "10px", fontWeight: "600", color: hasImage ? "#fff" : accent, letterSpacing: "0.14em", textTransform: "uppercase", background: hasImage ? "rgba(0,0,0,0.45)" : `${accent}18`, padding: "3px 10px", borderRadius: "20px", border: `1px solid ${hasImage ? "rgba(255,255,255,0.2)" : `${accent}30`}`, backdropFilter: "blur(4px)" }}>
+          {gift.category}
+        </span>
+        {/* Price badge */}
+        <span style={{ position: "absolute", top: "10px", right: "12px", fontFamily: "'Inter',sans-serif", fontSize: "12px", fontWeight: "700", color: "#1a1a2e", background: accent, padding: "4px 11px", borderRadius: "20px", letterSpacing: "0.01em" }}>
+          {gift.priceRange}
+        </span>
+      </div>
+
       <div
         style={{
           position: "absolute",
@@ -229,36 +278,9 @@ const GiftCardFace = ({ gift, index }) => {
               >
                 {gift.name}
               </span>
-              <span
-                style={{
-                  fontFamily: "'Inter',sans-serif",
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  color: accent,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {gift.priceRange}
-              </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-              <span
-                style={{
-                  fontFamily: "'Inter',sans-serif",
-                  fontSize: "10.5px",
-                  color: "rgba(255,255,255,0.4)",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  fontWeight: "500",
-                  background: "rgba(255,255,255,0.05)",
-                  padding: "2px 8px",
-                  borderRadius: "4px",
-                }}
-              >
-                {gift.category}
-              </span>
-              {gift.where?.map((store, i) => (
+              {gift.where?.slice(0, 1).map((store, i) => (
                 <a
                   key={i}
                   href={store.url}
