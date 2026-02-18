@@ -506,64 +506,16 @@ export default function GiftGenerator() {
     setError("");
     setGifts(null);
 
-    // In production (Vercel) use the secure serverless route.
-    // In local dev, fall back to calling Anthropic directly via VITE_ANTHROPIC_API_KEY.
-    const isLocalDev = import.meta.env.DEV;
-    const localApiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-
     try {
-      let parsed;
-
-      if (isLocalDev && localApiKey) {
-        const prompt = `You are a thoughtful gift advisor. Generate exactly 6 personalized gift ideas based on this person's profile:
-- Age group: ${age || "not specified"}
-- Gender: ${gender || "not specified"}
-- Personality traits: ${traits.join(", ") || "not specified"}
-- Hobbies & interests: ${hobbies.join(", ") || "not specified"}
-- Budget: ${budget || "flexible"}
-- Extra context: ${extraContext || "none"}
-
-Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
-- "name": short, specific gift name (not generic)
-- "category": one word category (e.g. Experience, Gadget, Book, Fashion, etc.)
-- "priceRange": estimated price in Indian Rupees like "₹800–₹1,200"
-- "reason": 2-3 sentences explaining why this gift is perfect for this specific person
-- "imageQuery": a 2-4 word Unsplash image search query for a beautiful product photo of this gift
-- "where": array of 1-2 objects each with "name" and "url" as direct search URLs. Formats: Amazon.in: "https://www.amazon.in/s?k=GIFT+NAME", Flipkart: "https://www.flipkart.com/search?q=GIFT+NAME", Myntra: "https://www.myntra.com/GIFT-NAME", Nykaa: "https://www.nykaa.com/search/result/?q=GIFT+NAME". URL-encode gift names. Prefer Indian retailers.
-
-Make gifts diverse, creative, and genuinely tailored. No gift cards.
-Respond with only the JSON array, no other text.`;
-
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": localApiKey,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 4096,
-            messages: [{ role: "user", content: prompt }],
-          }),
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message || "API error");
-        const text = data.content.map((b) => b.text || "").join("");
-        parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-      } else {
-        const res = await fetch("/api/gifts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ age, gender, traits, hobbies, budget, extraContext }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Server error");
-        parsed = data;
-      }
-
-      if (!Array.isArray(parsed)) throw new Error("Invalid response format");
-      setGifts(parsed);
+      const res = await fetch("/api/gifts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ age, gender, traits, hobbies, budget, extraContext }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Server error");
+      if (!Array.isArray(data)) throw new Error("Invalid response format");
+      setGifts(data);
       setStep(3);
     } catch (e) {
       setError(`Something went wrong: ${e.message}. Please try again.`);
